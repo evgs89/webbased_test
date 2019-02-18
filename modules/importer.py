@@ -55,7 +55,8 @@ class TestQuestion:
                                                                         number = self._number,
                                                                         vars = variants)
 
-class specialFileImporter:
+
+class SpecialFileImporter:
     def __init__(self):
         pass
 
