@@ -34,16 +34,18 @@ class Engine:
             return available_tests ## list of sqlite3.rows "SELECT quiz_id, name, description FROM quizzes"
 
     def select_test(self, user_id, quiz_id):
+        quiz_info = self._test_db.get_test_info(quiz_id)
+        max_weight = quiz_info['max_weight']
+        init_weight = quiz_info['initial_weight']
         self._progress_filename = f'databases/{self._progress_db.select_test(user_id, quiz_id)}.db'
         if not os.path.isfile(self._progress_filename):
-            quiz_info = self._test_db.get_test_info(quiz_id)
-            max_weight = quiz_info['']
             conn, cur = self._connect_db()
             cur.execute("CREATE TABLE progress (quiestion_id TEXT, weight TEXT, pass_hash TEXT, last_login TEXT)")
             conn.commit()
         return self._progress_db.return_progress(user_id, quiz_id)
 
     def select_mode(self, quiz_id, quantity = 20, exam = False):
+
 
 
 
