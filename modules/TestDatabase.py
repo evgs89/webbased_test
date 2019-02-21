@@ -11,7 +11,7 @@ class TestDatabase:
         if not os.path.isfile(self._db_file):
             conn = sqlite3.connect(self._db_file)
             cur = conn.cursor()
-            cur.execute("CREATE TABLE quizzes (quiz_id TEXT, quiz_filename TEXT, name TEXT, description TEXT)")
+            cur.execute("CREATE TABLE quizzes (quiz_id TEXT, quiz_filename TEXT, name TEXT, description TEXT, max_weight REAL, initial_weight REAL)")
             conn.commit()
 
     @staticmethod
@@ -62,7 +62,9 @@ class TestDatabase:
         test_description = description if description else ''
         conn = sqlite3.connect(self._db_file)
         cur = conn.cursor()
-        cur.execute("INSERT INTO quizzes VALUES (?, ?, ?, ?)", (_id, _id+'.db', test_name, test_description))
+        max_weight = len(questions)
+        init_weight = (max_weight + 1)/2
+        cur.execute("INSERT INTO quizzes VALUES (?, ?, ?, ?, ?, ?)", (_id, _id+'.db', test_name, test_description, max_weight, init_weight))
         conn.commit()
 
     def get_available_tests(self):
@@ -70,6 +72,12 @@ class TestDatabase:
         cur = conn.cursor()
         cur.execute("SELECT quiz_id, name, description FROM quizzes")
         return cur.fetchall()
+
+    def get_test_info(self, quiz_id):
+        conn = sqlite3.connect(self._db_file)
+        cur = conn.cursor()
+        cur.execute("SELECT max_weight, initial_weight FROM quizzes WHERE quiz_id = ?", quiz_id)
+        return cur.fetchone()
 
 
 class ProgressDatabase:

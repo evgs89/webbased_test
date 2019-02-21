@@ -1,5 +1,5 @@
 from modules.importer import TestQuestion
-from modules.exporter import TestDatabase
+from modules.TestDatabase import TestDatabase
 from modules.exporter import simpleExporter
 import sys
 import pickle
