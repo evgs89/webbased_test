@@ -1,15 +1,7 @@
 import sqlite3
 import os
-import hashlib
-import random, string
-
-
-def id_generator(size = 12, chars = string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
-
-
-def hash_password(password):
-    return hashlib.md5(bytes(password, encoding = 'utf8')).hexdigest()
+from modules.my_functions import hash_password, id_generator
+from modules.TestDatabase import ProgressDatabase
 
 
 class UserManagement:
@@ -41,11 +33,12 @@ class UserManagement:
         conn, cur = self._connect_db()
         if self._is_user(name):
             print('This username is already in use! Select another one!')
-            return False
         else:
             user_id = id_generator(10)
             cur.execute("INSERT INTO users VALUES (?, ?, ?, ?)", (user_id, name, hash_password(''), ''))
             conn.commit()
+            pd = ProgressDatabase
+            pd.add_user(user_id)
             return user_id
 
     def change_password(self, name, old_password, new_password):
@@ -56,16 +49,21 @@ class UserManagement:
         conn.commit()
         if cur.rowcount < 1:
             print("Name or password mismatch")
-            return False
         else:
             return True
 
     def delete_user(self, name):
         conn, cur = self._connect_db()
+        cur.execute("SELECT user_id FROM users WHERE username = ?", name)
+        user_id = cur.fetchone()[0]
         cur.execute("DELETE FROM user WHERE username = ?", name)
         conn.commit()
+        pd = ProgressDatabase()
+        pd.delete_user(user_id)
         return cur.rowcount > 0
 
-
-
+    def get_list_of_users(self):
+        conn, cur = self._connect_db()
+        cur.execute("SELECT user_id, username FROM users")
+        return cur.fetchall()
 

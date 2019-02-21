@@ -1,12 +1,7 @@
-import os
 import random
-import sqlite3
-import pickle
-try: from .importer import TestQuestion
-except ModuleNotFoundError: from modules.importer import TestQuestion
 
 
-class simpleExporter:
+class SimpleExporter:
     def __init__(self):
         self._marks = ['А','Б','В','Г']
 
@@ -40,52 +35,3 @@ class simpleExporter:
             test.write(questions_text)
         with open(filename + '_keys.txt', 'w') as keys:
             keys.write(questions_keys)
-
-
-class TestDatabase:
-    def __init__(self, filename):
-        self._filename = filename
-
-    def save_to_db(self, questions, replace = False):
-        if not os.path.isfile(self._filename) or replace:
-            try: os.remove(self._filename)
-            except FileNotFoundError: pass
-            conn = sqlite3.connect(self._filename)
-            cursor = conn.cursor()
-            cursor.execute("CREATE TABLE questions (tag TEXT, question TEXT, question_pic BLOB)")
-            conn.commit()
-            cursor.execute("CREATE TABLE answers (tag TEXT, correct BOOL, answer TEXT, answer_pic BLOB)")
-            conn.commit()
-            for question in questions:
-                cursor.execute("INSERT INTO questions values (?, ?, ?)", (question.number,
-                                                                          question.question,
-                                                                          sqlite3.Binary(question.question_picture) if question.question_picture else None))
-                for answer in question.answers:
-                    cursor.execute("INSERT INTO answers values (?, ?, ?, ?)", (question.number,
-                                                                               answer[0],
-                                                                               answer[1],
-                                                                               sqlite3.Binary(answer[2]) if answer[2] else None))
-            conn.commit()
-
-    def load_from_db(self):
-        conn = sqlite3.connect(self._filename)
-        cursor = conn.cursor()
-        cursor.execute("SELECT tag, question, question_pic FROM questions")
-        raw_questions = cursor.fetchall()
-        questions = []
-        for row in raw_questions:
-            question = TestQuestion()
-            question.number = row[0]
-            question.question = row[1]
-            question.question_picture = row[2]
-            cursor.execute("SELECT correct, answer, answer_pic FROM answers WHERE tag = ?", question.number)
-            answers = cursor.fetchall()
-            for answer in answers: question.add_answer(answer[1], answer[0], answer[2])
-            questions.append(question)
-        return questions
-
-
-
-
-
-
