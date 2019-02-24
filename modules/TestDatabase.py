@@ -36,23 +36,16 @@ class TestDatabase:
                                                                                sqlite3.Binary(answer[2]) if answer[2] else None))
             conn.commit()
 
-    @staticmethod
-    def load_from_db_file(filename):
+    def load_from_db_file(self, quiz_id):
+        tags = self.load_quesqion_tags(quiz_id)
+        return self.get_questions(quiz_id, tags)
+
+    def load_quesqion_tags(self, quiz_id):
+        filename = self._get_filename(quiz_id)
         conn = sqlite3.connect(filename)
-        cursor = conn.cursor()
-        cursor.execute("SELECT tag, question, question_pic FROM questions")
-        raw_questions = cursor.fetchall()
-        questions = []
-        for row in raw_questions:
-            question = TestQuestion()
-            question.number = row[0]
-            question.question = row[1]
-            question.question_picture = row[2]
-            cursor.execute("SELECT correct, answer, answer_pic FROM answers WHERE tag = ?", question.number)
-            answers = cursor.fetchall()
-            for answer in answers: question.add_answer(answer[1], answer[0], answer[2])
-            questions.append(question)
-        return questions
+        cur = conn.cursor()
+        cur.execute("SELECT tag FROM questions")
+        return [i[0] for i in cur.fetchall()]
 
     def load_to_db(self, questions, name = None, description = None):
         _id = id_generator(10)
@@ -78,6 +71,34 @@ class TestDatabase:
         cur = conn.cursor()
         cur.execute("SELECT max_weight, initial_weight FROM quizzes WHERE quiz_id = ?", quiz_id)
         return cur.fetchone()
+
+    def _get_filename(self, quiz_id):
+        conn = sqlite3.connect(self._db_file)
+        cur = conn.cursor()
+        cur.execute("SELECT quiz_filename FROM quizzes WHERE quiz_id = ?", quiz_id)
+        filename = cur.fetchone()[0]
+        return filename
+
+    def get_questions(self, quiz_id, question_tags):
+        conn = sqlite3.connect(self._get_filename(quiz_id))
+        cur = conn.cursor()
+        questions = {}
+        if type(question_tags) == int: question_tags = [str(question_tags), ]
+        if type(question_tags) == str: question_tags = [question_tags, ]
+        for tag in question_tags:
+            cur.execute("SELECT question, question_pic FROM questions WHERE tag = ?", tag)
+            row = cur.fetchone()
+            question = TestQuestion()
+            question.number = tag
+            question.question = row[0]
+            question.question_picture = row[1]
+            cur.execute("SELECT correct, answer, answer_pic FROM answers WHERE tag = ?", tag)
+            answers = cur.fetchall()
+            for answer in answers: question.add_answer(answer[1], answer[0], answer[2])
+            questions[tag] = question
+        return questions
+
+
 
 
 class ProgressDatabase:

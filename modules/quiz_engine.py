@@ -14,11 +14,17 @@ class Engine:
         self._username = ''
         self._password = ''
         self._max_weight = 0
+        self._init_weight = 0
 
     def _calc_new_weight(self, weight, answer):
         if answer: new_weight = weight - 0.5 * (weight - 1)
         else: new_weight = weight + (self._max_weight - weight) * 0.5
         return new_weight
+
+    def _get_correct_weights(self, quiz_id):
+        quiz_info = self._test_db.get_test_info(quiz_id)
+        self._max_weight = quiz_info['max_weight']
+        self._init_weight = quiz_info['initial_weight']
 
 
     def _connect_db(self):
@@ -33,15 +39,25 @@ class Engine:
             available_tests = self._test_db.get_available_tests()
             return available_tests ## list of sqlite3.rows "SELECT quiz_id, name, description FROM quizzes"
 
+    def _populate_individual_progress_db(self, quiz_id):
+        question_tags = self._test_db.load_quesqion_tags(quiz_id)
+        conn, cur = self._connect_db()
+        cur.execute("CREATE TABLE progress (question_id TEXT,weight TEXT, seen_times INTEGER, last_login TEXT, learned INTEGER)")
+        conn.commit()
+        for tag in question_tags:
+            cur.execute("INSERT INTO PROGRESS VALUES (?, ?, ?, ?, ?)", (tag, self._init_weight, 0, '', 0))
+        conn.commit()
+
+    def _get_weights(self):
+        conn, cu
+
+
     def select_test(self, user_id, quiz_id):
-        quiz_info = self._test_db.get_test_info(quiz_id)
-        max_weight = quiz_info['max_weight']
-        init_weight = quiz_info['initial_weight']
+        self._get_correct_weights(quiz_id)
         self._progress_filename = f'databases/{self._progress_db.select_test(user_id, quiz_id)}.db'
-        if not os.path.isfile(self._progress_filename):
-            conn, cur = self._connect_db()
-            cur.execute("CREATE TABLE progress (quiestion_id TEXT, weight TEXT, pass_hash TEXT, last_login TEXT)")
-            conn.commit()
+        if not os.path.isfile(self._progress_filename): self._populate_individual_progress_db(quiz_id)
+
+
         return self._progress_db.return_progress(user_id, quiz_id)
 
     def select_mode(self, quiz_id, quantity = 20, exam = False):
