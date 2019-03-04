@@ -31,7 +31,6 @@ class Engine:
         self._max_weight = quiz_info['max_weight']
         self._init_weight = quiz_info['initial_weight']
 
-
     def _connect_db(self):
         conn = sqlite3.connect(self._progress_filename)
         cur = conn.cursor()
@@ -58,7 +57,6 @@ class Engine:
         cur.execute("SELECT question_id, weight, last_seen FROM progress")
         weights = cur.fetchall()
         return weights
-
 
     def select_test(self, user_id, quiz_id):
         self._get_correct_weights(quiz_id)
