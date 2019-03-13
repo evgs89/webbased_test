@@ -16,6 +16,7 @@ class Engine:
         self._quiz_id = ''
         self._username = ''
         self._password = ''
+        self._user_id = ''
         self._max_weight = 0
         self._init_weight = 0
         self.deck = []
@@ -37,11 +38,15 @@ class Engine:
         return (conn, cur)
 
     def auth_user(self, username, password):
-        user_id = self._userManagement.valid_user(username, password)
-        if user_id:
+        self._user_id = self._userManagement.valid_user(username, password)
+        if self._user_id:
             self._username, self._password = username, password
+        return self._user_id
+
+    def get_available_tests(self):
+        if self._user_id:
             available_tests = self._test_db.get_available_tests()
-            return available_tests ## list of sqlite3.rows "SELECT quiz_id, name, description FROM quizzes"
+            return available_tests  ## list of sqlite3.rows "SELECT quiz_id, name, description FROM quizzes"
 
     def _populate_individual_progress_db(self, quiz_id):
         question_tags = self._test_db.load_quesqion_tags(quiz_id)
@@ -58,13 +63,14 @@ class Engine:
         weights = cur.fetchall()
         return weights
 
-    def select_test(self, user_id, quiz_id):
-        self._get_correct_weights(quiz_id)
-        self._quiz_id = quiz_id
-        self._progress_filename = f'databases/{self._progress_db.select_test(user_id, quiz_id)}.db'
-        if not os.path.isfile(self._progress_filename): self._populate_individual_progress_db(quiz_id)
-        self._get_correct_weights(quiz_id)
-        return self._progress_db.return_progress(user_id, quiz_id)
+    def select_test(self, quiz_id):
+        if self._user_id:
+            self._get_correct_weights(quiz_id)
+            self._quiz_id = quiz_id
+            self._progress_filename = f'databases/{self._progress_db.select_test(self._user_id, quiz_id)}.db'
+            if not os.path.isfile(self._progress_filename): self._populate_individual_progress_db(quiz_id)
+            self._get_correct_weights(quiz_id)
+            return self._progress_db.return_progress(self._user_id, quiz_id)
 
     def select_mode(self, quiz_id, quantity = 20, exam = False):
         assert(self._progress_filename != '')
