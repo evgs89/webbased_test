@@ -35,9 +35,27 @@ class TestDatabase:
                                                                                sqlite3.Binary(answer[2]) if answer[2] else None))
             conn.commit()
 
-    def load_from_db_file(self, quiz_id):
+    def load_from_db(self, quiz_id):
         tags = self.load_quesqion_tags(quiz_id)
         return self.get_questions(quiz_id, tags)
+
+    def delete_test(self, quiz_id):
+        filename = self._get_filename(quiz_id)
+        conn = sqlite3.connect(self._db_file)
+        cur = conn.cursor()
+        cur.execute("DELETE FROM quizzes WHERE quiz_id = ?", (quiz_id, ))
+        cur.commit()
+        try: os.remove(f'databases/{filename}')
+        except FileNotFoundError: pass
+        return True
+
+    def get_id_by_testname(self, name):
+        conn = sqlite3.connect(self._db_file)
+        cur = conn.cursor()
+        cur.execute("SELECT quiz_id FROM quizzes WHERE name = ?", (name,))
+        ID = cur.fetchone()
+        if ID: ID = ID[0]
+        return ID
 
     def load_quesqion_tags(self, quiz_id):
         filename = self._get_filename(quiz_id)
@@ -58,6 +76,7 @@ class TestDatabase:
         init_weight = (max_weight + 1)/2
         cur.execute("INSERT INTO quizzes VALUES (?, ?, ?, ?, ?, ?)", (_id, _id+'.db', test_name, test_description, max_weight, init_weight))
         conn.commit()
+        return _id
 
     def get_available_tests(self):
         conn = sqlite3.connect(self._db_file)
