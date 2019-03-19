@@ -1,6 +1,5 @@
 from modules.importer import TestQuestion
 from modules.my_functions import id_generator
-from modules.userManagement import UserManagement
 import os
 import sqlite3
 
@@ -69,13 +68,13 @@ class TestDatabase:
     def get_test_info(self, quiz_id):
         conn = sqlite3.connect(self._db_file)
         cur = conn.cursor()
-        cur.execute("SELECT max_weight, initial_weight FROM quizzes WHERE quiz_id = ?", quiz_id)
+        cur.execute("SELECT max_weight, initial_weight FROM quizzes WHERE quiz_id = ?", (quiz_id, ))
         return cur.fetchone()
 
     def _get_filename(self, quiz_id):
         conn = sqlite3.connect(self._db_file)
         cur = conn.cursor()
-        cur.execute("SELECT quiz_filename FROM quizzes WHERE quiz_id = ?", quiz_id)
+        cur.execute("SELECT quiz_filename FROM quizzes WHERE quiz_id = ?", (quiz_id, ))
         filename = cur.fetchone()[0]
         return filename
 
@@ -86,13 +85,13 @@ class TestDatabase:
         if type(question_tags) == int: question_tags = [str(question_tags), ]
         if type(question_tags) == str: question_tags = [question_tags, ]
         for tag in question_tags:
-            cur.execute("SELECT question, question_pic FROM questions WHERE tag = ?", tag)
+            cur.execute("SELECT question, question_pic FROM questions WHERE tag = ?", (tag, ))
             row = cur.fetchone()
             question = TestQuestion()
             question.number = tag
             question.question = row[0]
             question.question_picture = row[1]
-            cur.execute("SELECT correct, answer, answer_pic FROM answers WHERE tag = ?", tag)
+            cur.execute("SELECT correct, answer, answer_pic FROM answers WHERE tag = ?", (tag, ))
             answers = cur.fetchall()
             for answer in answers: question.add_answer(answer[1], answer[0], answer[2])
             questions[tag] = question
@@ -102,8 +101,9 @@ class TestDatabase:
 
 
 class ProgressDatabase:
-    def __init__(self):
+    def __init__(self, user_manager):
         self._db_file = 'databases/progress.db'
+        self.um = user_manager
         if not os.path.isfile(self._db_file):
             conn, cur = self._connect_db()
             cur.execute("CREATE TABLE progress (id TEXT, user_id TEXT, quiz_id TEXT, learned_percent REAL, seen_percent REAL, last_use TEXT)")
@@ -125,21 +125,20 @@ class ProgressDatabase:
 
     def delete_user(self, user_id):
         conn, cur = self._connect_db()
-        cur.execute("DELETE FROM progress WHERE user_id = ?", user_id)
+        cur.execute("DELETE FROM progress WHERE user_id = ?", (user_id, ))
         conn.commit()
 
     def add_test(self, quiz_id):
         conn, cur = self._connect_db()
-        um = UserManagement()
         _id = id_generator(10)
-        users = [i['user_id'] for i in um.get_list_of_users()]
+        users = [i['user_id'] for i in self.um.get_list_of_users()]
         for user in users:
             cur.execute("INSERT INTO progress VALUES (?, ?, ?, ?, ?, ?", (_id, user, quiz_id, 0, 0, ''))
         conn.commit()
 
     def delete_test(self, quiz_id):
         conn, cur = self._connect_db()
-        cur.execute("DELETE FROM progress WHERE quiz_id = ?", quiz_id)
+        cur.execute("DELETE FROM progress WHERE quiz_id = ?", (quiz_id, ))
 
     def update_progress(self, id, learned_percent, seen_percent):
         conn, cur = self._connect_db()
@@ -156,5 +155,3 @@ class ProgressDatabase:
         conn, cur = self._connect_db()
         cur.execute("SELECT learned_percent, seen_percent, last_use FROM progress WHERE user_id = ? AND quiz_id = ?", (user_id, quiz_id))
         return cur.fetchone()
-
-

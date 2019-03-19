@@ -4,6 +4,11 @@ from modules.my_functions import hash_password, id_generator
 from modules.TestDatabase import ProgressDatabase
 
 
+class DuplicateUsernameException(Exception):
+    def __init__(self):
+        pass
+
+
 class UserManagement:
     def __init__(self):
         self._db_file = 'databases/users.db'
@@ -19,8 +24,8 @@ class UserManagement:
 
     def _is_user(self, name):
         conn, cur = self._connect_db()
-        cur.execute("SELECT user_id FROM users WHERE username = ?", name)
-        return cur.fetchall() is not None
+        cur.execute("SELECT user_id FROM users WHERE username = ?", (name, ))
+        return len(cur.fetchall()) > 0
 
     def valid_user(self, username, password):
         conn, cur = self._connect_db()
@@ -31,13 +36,12 @@ class UserManagement:
 
     def create_user(self, name):
         conn, cur = self._connect_db()
-        if self._is_user(name):
-            print('This username is already in use! Select another one!')
+        if self._is_user(name): raise DuplicateUsernameException(name)
         else:
             user_id = id_generator(10)
             cur.execute("INSERT INTO users VALUES (?, ?, ?, ?)", (user_id, name, hash_password(''), ''))
             conn.commit()
-            pd = ProgressDatabase
+            pd = ProgressDatabase(self)
             pd.add_user(user_id)
             return user_id
 
@@ -54,12 +58,16 @@ class UserManagement:
 
     def delete_user(self, name):
         conn, cur = self._connect_db()
-        cur.execute("SELECT user_id FROM users WHERE username = ?", name)
-        user_id = cur.fetchone()[0]
-        cur.execute("DELETE FROM user WHERE username = ?", name)
-        conn.commit()
-        pd = ProgressDatabase()
-        pd.delete_user(user_id)
+        cur.execute("SELECT user_id FROM users WHERE username = ?", (name, ))
+        user_row = cur.fetchone()
+        if user_row:
+            user_id = user_row[0]
+            cur.execute("DELETE FROM users WHERE username = ?", (name, ))
+            conn.commit()
+            ProgressDatabase(self).delete_user(user_id)
+        else:
+            print('No such user')
+            return True
         return cur.rowcount > 0
 
     def get_list_of_users(self):

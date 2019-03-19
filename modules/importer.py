@@ -1,4 +1,4 @@
-
+from collections import namedtuple
 
 class TestQuestion:
     def __init__(self):
@@ -46,6 +46,10 @@ class TestQuestion:
     def add_answer(self, answer, correct = False, pic = None):
         self._answers.append((correct, answer, pic))
         if correct: self._available_answers_count += 1
+
+    def get_correct_answers(self):
+        correct_answers = namedtuple('correct_answers', 'tag question question_pic correct_answers')
+        return correct_answers(self._number, self._question, self._pic, [i for i in self._answers if i[0]])
 
     def __repr__(self):
         variants = ''

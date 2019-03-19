@@ -5,6 +5,7 @@ import datetime
 from modules.userManagement import UserManagement
 from modules.TestDatabase import TestDatabase
 from modules.TestDatabase import ProgressDatabase
+from collections import namedtuple
 
 
 class Engine:
@@ -19,8 +20,25 @@ class Engine:
         self._user_id = ''
         self._max_weight = 0
         self._init_weight = 0
-        self.deck = []
+        self.deck = {}
+        self._current_question_id = ''
+        self._current_question_keys = []
+        self.exam = False
         self.deck_weights = {}
+        self.correct_answers_to_quiz = []
+
+    def _mix(self, length = 4):
+        dec_counter = length
+        sequence = []
+        while dec_counter:
+            dec_counter -= 1
+            added = False
+            while not added:
+                rand = random.randint(0, length - 1)
+                if rand not in sequence:
+                    sequence.append(rand)
+                    added = True
+        return sequence
 
     def _calc_new_weight(self, weight, answer):
         if answer: new_weight = weight - 0.5 * (weight - 1)
@@ -44,9 +62,8 @@ class Engine:
         return self._user_id
 
     def get_available_tests(self):
-        if self._user_id:
-            available_tests = self._test_db.get_available_tests()
-            return available_tests  ## list of sqlite3.rows "SELECT quiz_id, name, description FROM quizzes"
+        available_tests = self._test_db.get_available_tests()
+        return available_tests  ## list of sqlite3.rows "SELECT quiz_id, name, description FROM quizzes"
 
     def _populate_individual_progress_db(self, quiz_id):
         question_tags = self._test_db.load_quesqion_tags(quiz_id)
@@ -70,28 +87,49 @@ class Engine:
             self._progress_filename = f'databases/{self._progress_db.select_test(self._user_id, quiz_id)}.db'
             if not os.path.isfile(self._progress_filename): self._populate_individual_progress_db(quiz_id)
             self._get_correct_weights(quiz_id)
-            return self._progress_db.return_progress(self._user_id, quiz_id)
+            return True
 
-    def select_mode(self, quiz_id, quantity = 20, exam = False):
+    def get_progress(self):
+        if self._quiz_id and self._user_id:
+            return self._progress_db.return_progress(self._user_id, self._quiz_id)
+
+    def select_mode(self, quantity = 20, exam = False):
         assert(self._progress_filename != '')
+        assert(self._quiz_id != '')
+        self.correct_answers_to_quiz = []
         weight_list = self._get_weights()
         ids = [i['question_id'] for i in weight_list]
         weights = [i['weight'] for i in weight_list]
         deck_ids = random.choices(population = ids, weights = weights, k = quantity)
-        deck = self._test_db.get_questions(deck_ids, quiz_id) #dict {id: question_object}
+        deck = self._test_db.get_questions(deck_ids, self._quiz_id) #dict {id: question_object}
         deck_weights = {}
         for i in weights:
             if i['question_id'] in deck: deck_weights[i['question_id']] = i['weight']
         assert(len(deck) == len(deck_weights))
         self.deck = deck
+        self.exam = exam
         self.deck_weights = deck_weights
-        return exam
+        return True
 
-    def user_answered_question(self, question_id, correct = False):
+    def get_random_question_from_deck(self):
+        if not self.deck: return None
+        question = random.choice(list(self.deck.items()))[1]
+        Question = namedtuple('Question', ['tag', 'question', 'question_picture', 'answers'])
+        self._current_question_id = question.number
+        sequence = self._mix(len(question.answers))
+        key = [i for i in sequence if question.answers[i][0]] # create list of correct answers
+        self._current_question_keys = key
+        answers = [question.answers[i] for i in sequence]
+        q = Question(question.number, question.question, question.question_picture, answers)
+        return q
+
+    def user_answered_question(self, question_id, selected = [], correct = False):
         new_weight = self._calc_new_weight(self.deck_weights[question_id], correct)
         self.deck_weights[question_id] = new_weight
-        if correct: self.deck.pop(question_id)
-        return True
+        if set(selected) == set(self._current_question_keys): correct = True
+        if not correct: self.correct_answers_to_quiz.append(self.deck[question_id].get_correct_answers())
+        if correct or self.exam: self.deck.pop(question_id)
+        return (self.exam, correct, self._current_question_keys) # I don't want to save exam state on client side
 
     def test_finished(self):
         conn, cur = self._connect_db()
@@ -100,11 +138,11 @@ class Engine:
             cur.execute("UPDATE progress SET weight = ?, seen_times = seen_times + 1, last_seen = ? WHERE question_id = ?",
                         (self.deck_weights[question_id], today, question_id))
         conn.commit()
-        return True
+        self.update_statistics(self._quiz_id)
+        return self.correct_answers_to_quiz
 
-    def update_statistics(self, quiz_id, user_id = None):
-        if not self._progress_filename:
-            self.select_test(quiz_id, user_id)
+    def update_statistics(self, quiz_id):
+        if not self._progress_filename: self.select_test(quiz_id)
         conn, cur = self._connect_db()
         cur.execute("SELECT question_id, weight, seen_times, last_seen FROM progress")
         sum_weight = 0
