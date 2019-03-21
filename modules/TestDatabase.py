@@ -4,6 +4,10 @@ import os
 import sqlite3
 
 
+class DuplicateTestNameException(Exception):
+    pass
+
+
 class TestDatabase:
     def __init__(self):
         self._db_file = 'databases/quizzes.db'
@@ -12,6 +16,23 @@ class TestDatabase:
             cur = conn.cursor()
             cur.execute("CREATE TABLE quizzes (quiz_id TEXT, quiz_filename TEXT, name TEXT, description TEXT, max_weight REAL, initial_weight REAL)")
             conn.commit()
+
+    def _get_filename(self, quiz_id):
+        conn = sqlite3.connect(self._db_file)
+        cur = conn.cursor()
+        cur.execute("SELECT quiz_filename FROM quizzes WHERE quiz_id = ?", (quiz_id, ))
+        filename = cur.fetchone()
+        if filename: filename = f'databases/{filename[0]}'
+        return filename
+
+    def _quiz_exists(self, quiz_name):
+        "return quiz_id for given quiz_name or None if no such test"
+        quizes = self.get_available_tests()
+        if quizes:
+            quiz_list = {i[1]: i[0] for i in quizes}
+            return quiz_list.get(quiz_name)
+
+
 
     @staticmethod
     def save_to_db_file(filename, questions, replace = False):
@@ -34,68 +55,42 @@ class TestDatabase:
                                                                                answer[1],
                                                                                sqlite3.Binary(answer[2]) if answer[2] else None))
             conn.commit()
+            return True
+        else: raise DuplicateTestNameException
 
-    def load_from_db(self, quiz_id):
-        tags = self.load_quesqion_tags(quiz_id)
-        return self.get_questions(quiz_id, tags)
-
-    def delete_test(self, quiz_id):
-        filename = self._get_filename(quiz_id)
-        conn = sqlite3.connect(self._db_file)
-        cur = conn.cursor()
-        cur.execute("DELETE FROM quizzes WHERE quiz_id = ?", (quiz_id, ))
-        cur.commit()
-        try: os.remove(f'databases/{filename}')
-        except FileNotFoundError: pass
-        return True
+    def load_to_db(self, questions, name = None, description = None, replace = False):
+        _id = id_generator(10)
+        if name:
+            existing_id = self._quiz_exists(name)
+            test_name = name
+            if existing_id: _id = existing_id
+        else:
+            test_name = _id
+        filename = f'databases/{_id}.db'
+        if self.save_to_db_file(filename, questions, replace):
+            test_description = description if description else ''
+            conn = sqlite3.connect(self._db_file)
+            cur = conn.cursor()
+            max_weight = len(questions)
+            init_weight = (max_weight + 1)/2
+            cur.execute("INSERT INTO quizzes VALUES (?, ?, ?, ?, ?, ?)", (_id, _id+'.db', test_name, test_description, max_weight, init_weight))
+            conn.commit()
+            return _id
 
     def get_id_by_testname(self, name):
         conn = sqlite3.connect(self._db_file)
         cur = conn.cursor()
         cur.execute("SELECT quiz_id FROM quizzes WHERE name = ?", (name,))
-        ID = cur.fetchone()
-        if ID: ID = ID[0]
-        return ID
+        ID = cur.fetchall()
+        if ID: return [i[0] for i in ID]
 
     def load_quesqion_tags(self, quiz_id):
         filename = self._get_filename(quiz_id)
-        conn = sqlite3.connect(filename)
-        cur = conn.cursor()
-        cur.execute("SELECT tag FROM questions")
-        return [i[0] for i in cur.fetchall()]
-
-    def load_to_db(self, questions, name = None, description = None):
-        _id = id_generator(10)
-        filename = 'databases/{0}.db'.format(_id)
-        self.save_to_db_file(filename, questions, True)
-        test_name = name if name else _id
-        test_description = description if description else ''
-        conn = sqlite3.connect(self._db_file)
-        cur = conn.cursor()
-        max_weight = len(questions)
-        init_weight = (max_weight + 1)/2
-        cur.execute("INSERT INTO quizzes VALUES (?, ?, ?, ?, ?, ?)", (_id, _id+'.db', test_name, test_description, max_weight, init_weight))
-        conn.commit()
-        return _id
-
-    def get_available_tests(self):
-        conn = sqlite3.connect(self._db_file)
-        cur = conn.cursor()
-        cur.execute("SELECT quiz_id, name, description FROM quizzes")
-        return cur.fetchall()
-
-    def get_test_info(self, quiz_id):
-        conn = sqlite3.connect(self._db_file)
-        cur = conn.cursor()
-        cur.execute("SELECT max_weight, initial_weight FROM quizzes WHERE quiz_id = ?", (quiz_id, ))
-        return cur.fetchone()
-
-    def _get_filename(self, quiz_id):
-        conn = sqlite3.connect(self._db_file)
-        cur = conn.cursor()
-        cur.execute("SELECT quiz_filename FROM quizzes WHERE quiz_id = ?", (quiz_id, ))
-        filename = cur.fetchone()[0]
-        return filename
+        if filename:
+            conn = sqlite3.connect(filename)
+            cur = conn.cursor()
+            cur.execute("SELECT tag FROM questions")
+            return [i[0] for i in cur.fetchall()]
 
     def get_questions(self, quiz_id, question_tags):
         conn = sqlite3.connect(self._get_filename(quiz_id))
@@ -115,6 +110,36 @@ class TestDatabase:
             for answer in answers: question.add_answer(answer[1], answer[0], answer[2])
             questions[tag] = question
         return questions
+
+    def load_from_db(self, quiz_id):
+        tags = self.load_quesqion_tags(quiz_id)
+        return self.get_questions(quiz_id, tags)
+
+    def get_available_tests(self):
+        conn = sqlite3.connect(self._db_file)
+        cur = conn.cursor()
+        cur.execute("SELECT quiz_id, name, description FROM quizzes")
+        return cur.fetchall()
+
+    def get_test_info(self, quiz_id):
+        conn = sqlite3.connect(self._db_file)
+        cur = conn.cursor()
+        cur.execute("SELECT max_weight, initial_weight FROM quizzes WHERE quiz_id = ?", (quiz_id, ))
+        return cur.fetchone()
+
+    def delete_test(self, quiz_id):
+        "remove one test (string ID) or many (list of IDs)"
+        if type(quiz_id) == str: quiz_id = [quiz_id]
+        if type(quiz_id) == list:
+            for ID in quiz_id:
+                filename = self._get_filename(ID)
+                conn = sqlite3.connect(self._db_file)
+                cur = conn.cursor()
+                cur.execute("DELETE FROM quizzes WHERE quiz_id = ?", (ID, ))
+                conn.commit()
+                try: os.remove(filename)
+                except FileNotFoundError: print(f'{filename} is not found')
+        return True
 
 
 
@@ -139,7 +164,7 @@ class ProgressDatabase:
         _id = id_generator(10)
         available_tests = tdb.get_available_tests()
         for test in available_tests:
-            cur.execute("INSERT INTO progress VALUES (?, ?, ?, ?, ?, ?", (_id, user_id, test['quiz_id'], 0, 0, ''))
+            cur.execute("INSERT INTO progress VALUES (?, ?, ?, ?, ?, ?)", (_id, user_id, test[0], 0, 0, ''))
         conn.commit()
 
     def delete_user(self, user_id):
@@ -152,7 +177,7 @@ class ProgressDatabase:
         _id = id_generator(10)
         users = [i['user_id'] for i in self.um.get_list_of_users()]
         for user in users:
-            cur.execute("INSERT INTO progress VALUES (?, ?, ?, ?, ?, ?", (_id, user, quiz_id, 0, 0, ''))
+            cur.execute("INSERT INTO progress VALUES (?, ?, ?, ?, ?, ?)", (_id, user, quiz_id, 0, 0, ''))
         conn.commit()
 
     def delete_test(self, quiz_id):

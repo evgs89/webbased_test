@@ -5,7 +5,7 @@ from modules.TestDatabase import ProgressDatabase
 
 
 class DuplicateUsernameException(Exception):
-    def __init__(self):
+    def __init__(self, *args):
         pass
 
 

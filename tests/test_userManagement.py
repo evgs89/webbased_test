@@ -1,6 +1,10 @@
 import unittest
+from typing import List, Any
+import sqlite3
+
 from modules.userManagement import UserManagement, DuplicateUsernameException
-from modules.my_functions import id_generator, hash_password
+from modules.my_functions import id_generator
+
 
 class test_UserManagement(unittest.TestCase):
     @classmethod
@@ -16,7 +20,8 @@ class test_UserManagement(unittest.TestCase):
     def test_create_user(self):
         if self.um._is_user(self.username): self.um.delete_user(self.username)
         self.assertIsNotNone(self.um.create_user(self.username))
-        self.assertRaises(DuplicateUsernameException)
+        with self.assertRaises(DuplicateUsernameException):
+            self.um.create_user(self.username)
 
     def test_change_password(self):
         try: self.um.create_user(self.username)
@@ -39,9 +44,11 @@ class test_UserManagement(unittest.TestCase):
         for name in users:
             try: self.um.create_user(name)
             except DuplicateUsernameException: users.remove(name)
-        rows_users = self.um.get_list_of_users()
-        recieved_users = [row[1] for row in rows_users]
-        self.assertTrue(set(recieved_users) - set(users) == set())
+        rows_users: List[sqlite3.Row] = self.um.get_list_of_users()
+        received_users = [row[1] for row in rows_users]
+        self.assertTrue(set(users) - set(received_users) == set())
         for name in users: self.um.delete_user(name)
 
 
+if __name__ == '__main__':
+    unittest.main()
