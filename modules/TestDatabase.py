@@ -158,7 +158,7 @@ class ProgressDatabase:
         cur = conn.cursor()
         return [conn, cur]
 
-    def add_user(self, user_id):
+    def create_user(self, user_id):
         conn, cur = self._connect_db()
         tdb = TestDatabase()
         _id = id_generator(10)
@@ -166,11 +166,13 @@ class ProgressDatabase:
         for test in available_tests:
             cur.execute("INSERT INTO progress VALUES (?, ?, ?, ?, ?, ?)", (_id, user_id, test[0], 0, 0, ''))
         conn.commit()
+        return cur.lastrowid is not None
 
     def delete_user(self, user_id):
         conn, cur = self._connect_db()
         cur.execute("DELETE FROM progress WHERE user_id = ?", (user_id, ))
         conn.commit()
+        return cur.rowcount > 0
 
     def add_test(self, quiz_id):
         conn, cur = self._connect_db()
@@ -179,10 +181,12 @@ class ProgressDatabase:
         for user in users:
             cur.execute("INSERT INTO progress VALUES (?, ?, ?, ?, ?, ?)", (_id, user, quiz_id, 0, 0, ''))
         conn.commit()
+        return cur.lastrowid is not None
 
     def delete_test(self, quiz_id):
         conn, cur = self._connect_db()
         cur.execute("DELETE FROM progress WHERE quiz_id = ?", (quiz_id, ))
+        return cur.rowcount > 0
 
     def update_progress(self, id, learned_percent, seen_percent):
         conn, cur = self._connect_db()

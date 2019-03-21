@@ -2,7 +2,7 @@ import os
 import sqlite3
 import random
 import datetime
-from modules.userManagement import UserManagement
+from modules.userManager import UserManager
 from modules.TestDatabase import TestDatabase
 from modules.TestDatabase import ProgressDatabase
 from collections import namedtuple
@@ -10,7 +10,7 @@ from collections import namedtuple
 
 class Engine:
     def __init__(self):
-        self._userManagement = UserManagement()
+        self._userManagement = UserManager()
         self._test_db = TestDatabase()
         self._progress_db = ProgressDatabase()
         self._progress_filename = ''

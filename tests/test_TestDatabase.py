@@ -2,7 +2,6 @@ import unittest
 from modules.TestDatabase import TestDatabase, DuplicateTestNameException
 from modules.importer import TestQuestion
 import os
-import sqlite3
 
 
 def create_test_questions():

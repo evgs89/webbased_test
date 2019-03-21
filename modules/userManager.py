@@ -9,7 +9,7 @@ class DuplicateUsernameException(Exception):
         pass
 
 
-class UserManagement:
+class UserManager:
     def __init__(self):
         self._db_file = 'databases/users.db'
         if not os.path.isfile(self._db_file):
@@ -22,10 +22,12 @@ class UserManagement:
         cur = conn.cursor()
         return [conn, cur]
 
-    def _is_user(self, name):
+    def get_user_id(self, name):
         conn, cur = self._connect_db()
         cur.execute("SELECT user_id FROM users WHERE username = ?", (name, ))
-        return len(cur.fetchall()) > 0
+        id = cur.fetchone()
+        if id: id = id[0]
+        return id
 
     def valid_user(self, username, password):
         conn, cur = self._connect_db()
@@ -36,13 +38,13 @@ class UserManagement:
 
     def create_user(self, name):
         conn, cur = self._connect_db()
-        if self._is_user(name): raise DuplicateUsernameException(name)
+        if self.get_user_id(name): raise DuplicateUsernameException(name)
         else:
             user_id = id_generator(10)
             cur.execute("INSERT INTO users VALUES (?, ?, ?, ?)", (user_id, name, hash_password(''), ''))
             conn.commit()
             pd = ProgressDatabase(self)
-            pd.add_user(user_id)
+            pd.create_user(user_id)
             return user_id
 
     def change_password(self, name, old_password, new_password):
