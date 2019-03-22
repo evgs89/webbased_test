@@ -15,7 +15,7 @@ class tets_ProgressDatabase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.td.delete_test(cls.td.get_id_by_testname('test_db'))
+        cls.td.delete_test(cls.td.get_test_id('test_db'))
 
     def setUp(self):
         self.um.create_user('test_user')
@@ -43,9 +43,23 @@ class tets_ProgressDatabase(unittest.TestCase):
         self.pd.add_test(ID)
         self.assertTrue(self.pd.delete_test(ID))
 
+    def test_select_test(self):
+        self.assertIsNotNone(self.pd.select_test(self.um.get_user_id('test_user'), self.td.get_test_id('test_db')[0]))
+
     def test_update_progress(self):
-        user = self.td.get_id_by_testname('test_db')
-        self.assertTrue(self.pd.update_progress())
+        ID = self.pd.select_test(self.um.get_user_id('test_user'), self.td.get_test_id('test_db')[0])
+        self.assertTrue(self.pd.update_progress(ID, 50, 70))
+        progress = self.pd.return_progress(self.um.get_user_id('test_user'), self.td.get_test_id('test_db')[0])
+        self.assertIn(50, progress)
+        self.assertIn(70, progress)
+
+    def test_return_progress(self):
+        progress = self.pd.return_progress(self.um.get_user_id('test_user'), self.td.get_test_id('test_db')[0])
+        self.assertIsInstance(progress, tuple)
+
+
+
+
 
 
 

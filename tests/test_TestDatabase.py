@@ -31,10 +31,10 @@ class test_TestDatabase(unittest.TestCase):
     def tearDownClass(cls):
         try: os.remove('test.db')
         except FileNotFoundError: pass
-        cls.td.delete_test(cls.td.get_id_by_testname('test_db'))
+        cls.td.delete_test(cls.td.get_test_id('test_db'))
 
     def setUp(self):
-        if self.td.get_id_by_testname('test_db'): self.td.delete_test(self.td.get_id_by_testname('test_db'))
+        if self.td.get_test_id('test_db'): self.td.delete_test(self.td.get_test_id('test_db'))
 
     def test_save_to_db_file(self):
         self.assertTrue(self.td.save_to_db_file('test.db', self.questions, replace = True))
@@ -44,12 +44,12 @@ class test_TestDatabase(unittest.TestCase):
 
     def test_load_to_db(self):
         id = self.td.load_to_db(create_test_questions(), 'test_db', 'automatically created db, remove it')
-        self.assertIsNotNone(id)
+        self.assertIsInstance(id, str)
 
-    def test_get_ID_by_testname(self):
+    def test_get_test_id(self):
         self.assertTrue(self.td.load_to_db(create_test_questions(),
                                            'test_db',
-                                           'automatically created db, remove it') in self.td.get_id_by_testname('test_db'))
+                                           'automatically created db, remove it') in self.td.get_test_id('test_db'))
 
     def test_load_question_tags(self):
         self.assertEqual(5, len(self.td.load_quesqion_tags(self.td.load_to_db(create_test_questions(),

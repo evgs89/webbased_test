@@ -14,7 +14,8 @@ class TestDatabase:
         if not os.path.isfile(self._db_file):
             conn = sqlite3.connect(self._db_file)
             cur = conn.cursor()
-            cur.execute("CREATE TABLE quizzes (quiz_id TEXT, quiz_filename TEXT, name TEXT, description TEXT, max_weight REAL, initial_weight REAL)")
+            cur.execute("CREATE TABLE quizzes (quiz_id TEXT, quiz_filename TEXT, " +
+                        "name TEXT, description TEXT, max_weight REAL, initial_weight REAL)")
             conn.commit()
 
     def _get_filename(self, quiz_id):
@@ -46,14 +47,16 @@ class TestDatabase:
             cursor.execute("CREATE TABLE answers (tag TEXT, correct BOOL, answer TEXT, answer_pic BLOB)")
             conn.commit()
             for question in questions:
-                cursor.execute("INSERT INTO questions values (?, ?, ?)", (question.number,
-                                                                          question.question,
-                                                                          sqlite3.Binary(question.question_picture) if question.question_picture else None))
+                cursor.execute("INSERT INTO questions values (?, ?, ?)",
+                               (question.number,
+                                question.question,
+                                sqlite3.Binary(question.question_picture) if question.question_picture else None))
                 for answer in question.answers:
-                    cursor.execute("INSERT INTO answers values (?, ?, ?, ?)", (question.number,
-                                                                               answer[0],
-                                                                               answer[1],
-                                                                               sqlite3.Binary(answer[2]) if answer[2] else None))
+                    cursor.execute("INSERT INTO answers values (?, ?, ?, ?)",
+                                   (question.number,
+                                    answer[0],
+                                    answer[1],
+                                    sqlite3.Binary(answer[2]) if answer[2] else None))
             conn.commit()
             return True
         else: raise DuplicateTestNameException
@@ -73,11 +76,12 @@ class TestDatabase:
             cur = conn.cursor()
             max_weight = len(questions)
             init_weight = (max_weight + 1)/2
-            cur.execute("INSERT INTO quizzes VALUES (?, ?, ?, ?, ?, ?)", (_id, _id+'.db', test_name, test_description, max_weight, init_weight))
+            cur.execute("INSERT INTO quizzes VALUES (?, ?, ?, ?, ?, ?)",
+                        (_id, _id+'.db', test_name, test_description, max_weight, init_weight))
             conn.commit()
             return _id
 
-    def get_id_by_testname(self, name):
+    def get_test_id(self, name):
         conn = sqlite3.connect(self._db_file)
         cur = conn.cursor()
         cur.execute("SELECT quiz_id FROM quizzes WHERE name = ?", (name,))
@@ -150,7 +154,8 @@ class ProgressDatabase:
         self.um = user_manager
         if not os.path.isfile(self._db_file):
             conn, cur = self._connect_db()
-            cur.execute("CREATE TABLE progress (id TEXT, user_id TEXT, quiz_id TEXT, learned_percent REAL, seen_percent REAL, last_use TEXT)")
+            cur.execute("CREATE TABLE progress (id TEXT, user_id TEXT, quiz_id TEXT, " +
+                        "learned_percent REAL, seen_percent REAL, last_use TEXT)")
             conn.commit()
 
     def _connect_db(self):
@@ -177,7 +182,7 @@ class ProgressDatabase:
     def add_test(self, quiz_id):
         conn, cur = self._connect_db()
         _id = id_generator(10)
-        users = [i['user_id'] for i in self.um.get_list_of_users()]
+        users = [i[0] for i in self.um.get_list_of_users()]
         for user in users:
             cur.execute("INSERT INTO progress VALUES (?, ?, ?, ?, ?, ?)", (_id, user, quiz_id, 0, 0, ''))
         conn.commit()
@@ -190,16 +195,19 @@ class ProgressDatabase:
 
     def update_progress(self, id, learned_percent, seen_percent):
         conn, cur = self._connect_db()
-        cur.execute("UPDATE progress SET learned_percent = ?, seen_percent = ? WHERE id = ?", (learned_percent, seen_percent, id))
+        cur.execute("UPDATE progress SET learned_percent = ?, seen_percent = ? WHERE id = ?",
+                    (learned_percent, seen_percent, id))
         conn.commit()
         return cur.rowcount > 0
 
     def select_test(self, user_id, quiz_id):
         conn, cur = self._connect_db()
         cur.execute("SELECT id FROM progress WHERE user_id = ? AND quiz_id = ?", (user_id, quiz_id))
-        return cur.fetchone()['id']
+        try: return cur.fetchone()[0]
+        except TypeError: return None
 
     def return_progress(self, user_id, quiz_id):
         conn, cur = self._connect_db()
-        cur.execute("SELECT learned_percent, seen_percent, last_use FROM progress WHERE user_id = ? AND quiz_id = ?", (user_id, quiz_id))
+        cur.execute("SELECT learned_percent, seen_percent, last_use FROM progress WHERE user_id = ? AND quiz_id = ?",
+                    (user_id, quiz_id))
         return cur.fetchone()
