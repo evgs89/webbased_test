@@ -83,13 +83,13 @@ class TestForm(npyscreen.Form):
         self.progressbar = self.add(npyscreen.SliderNoLabel(out_of = len(self.parentApp._engine.deck_weights),
                                                    step = 0,
                                                    value = len(self.parentApp._engine.deck)))
-        self.add(npyscreen.Pager(value = question.question, autowrap = True))
+        self.add(npyscreen.Pager(value = question.question_text, autowrap = True))
         self.answer = self.add(npyscreen.MultiLine(values = question.answers))
 
 
     def afterEditing(self):
         "validate user's answer and set next form"
-        exam, correct, correct_keys = self.parentApp._engine.user_answered_question(self.name, self.answer,)
+        exam, correct, correct_keys = self.parentApp._engine.user_answered_question(self.name, self.answer,) ## TODO: check arguments
         if not exam and not correct:
             npyscreen.notify_confirm(f'Ответ неверный. Верные варианты: {", ".join(correct_keys)}')
         if not len(self.parentApp._engine.deck): self.parentApp.setNextForm('RESULT')
@@ -102,7 +102,7 @@ class ResultForm(npyscreen.Form):
         correct_answers_text = ''
         for answer in correct_answers:
             answers = "\n".join([j[1] for j in answer.correct_answers])
-            correct_answers_text += f'Вопрос: {answer.tag}\n{answer.question}\nВерный ответ:\n{answers}\n'
+            correct_answers_text += f'Вопрос: {answer.tag}\n{answer.question_text}\nВерный ответ:\n{answers}\n'
         if self.parentApp._engine.exam:
             text = f'Тест окончен. Ознакомьтесь с вопросами, на которые Вы ответили неверно:\n{correct_answers_text}'
         else:

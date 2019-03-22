@@ -13,9 +13,12 @@ class test_UserManager(unittest.TestCase):
         cls.username = id_generator()
         cls.password = id_generator()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.um.delete_user(cls.username)
+    def setUp(self):
+        self.um.create_user(self.username)
+        self.um.change_password(self.username, '', self.password)
+
+    def tearDown(self):
+        self.um.delete_user(self.username)
 
     def test_create_user(self):
         if self.um.get_user_id(self.username): self.um.delete_user(self.username)
@@ -24,22 +27,17 @@ class test_UserManager(unittest.TestCase):
             self.um.create_user(self.username)
 
     def test_get_user_id(self):
-        try: self.um.create_user(self.username)
-        except DuplicateUsernameException: pass
         self.assertIsNotNone(self.um.get_user_id(self.username))
 
     def test_change_password(self):
-        try: self.um.create_user(self.username)
-        except DuplicateUsernameException: pass
-        self.assertTrue(self.um.change_password(self.username, self.password, '') or self.um.change_password(self.username, '', self.password))
-        self.um.change_password(self.username, '', self.password)
+        self.um.create_user('test_user')
+        self.assertTrue(self.um.change_password('test_user', '', self.password))
+        self.assertIsNone(self.um.change_password('test_user', '', self.password))
+        self.um.delete_user('test_user')
 
     def test_valid_user(self):
-        try: self.um.create_user(self.username)
-        except DuplicateUsernameException: pass
-        self.assertTrue(self.um.valid_user(self.username, '') or self.um.valid_user(self.username, self.password))
-        if self.um.valid_user(self.username, ''): self.um.change_password(self.username, '', self.password)
         self.assertTrue(self.um.valid_user(self.username, self.password))
+        self.assertIsNone(self.um.valid_user(self.username, '123'))
 
     def test_delete_user(self):
         self.assertTrue(self.um.delete_user(self.username))

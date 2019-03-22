@@ -59,6 +59,7 @@ class Engine:
         self._user_id = self._userManagement.valid_user(username, password)
         if self._user_id:
             self._username, self._password = username, password
+            self.select_test(None)
         return self._user_id
 
     def get_available_tests(self):
@@ -80,14 +81,25 @@ class Engine:
         weights = cur.fetchall()
         return weights
 
-    def select_test(self, quiz_id):
-        if self._user_id:
+    def select_test(self, quiz_id = None):
+        if self._user_id and quiz_id:
             self._get_correct_weights(quiz_id)
             self._quiz_id = quiz_id
             self._progress_filename = f'databases/{self._progress_db.select_test(self._user_id, quiz_id)}.db'
             if not os.path.isfile(self._progress_filename): self._populate_individual_progress_db(quiz_id)
             self._get_correct_weights(quiz_id)
-            return True
+            return self._progress_filename
+        else:
+            self._progress_filename = ''
+            self._quiz_id = ''
+            self._max_weight = 0
+            self._init_weight = 0
+            self.deck = {}
+            self._current_question_id = ''
+            self._current_question_keys = []
+            self.exam = False
+            self.deck_weights = {}
+            self.correct_answers_to_quiz = []
 
     def get_progress(self):
         if self._quiz_id and self._user_id:
@@ -114,19 +126,18 @@ class Engine:
     def get_random_question_from_deck(self):
         if not self.deck: return None
         question = random.choice(list(self.deck.items()))[1]
-        Question = namedtuple('Question', ['tag', 'question', 'question_picture', 'answers'])
-        self._current_question_id = question.number
+        Question = namedtuple('Question', ['tag', 'question_text', 'question_picture', 'answers'])
+        self._current_question_id = question.tag
         sequence = self._mix(len(question.answers))
         key = [i for i in sequence if question.answers[i][0]] # create list of correct answers
         self._current_question_keys = key
         answers = [question.answers[i] for i in sequence]
-        q = Question(question.number, question.question, question.question_picture, answers)
+        q = Question(question.tag, question.question_text, question.question_picture, answers)
         return q
 
     def user_answered_question(self, question_id, selected = [], correct = False):
-        new_weight = self._calc_new_weight(self.deck_weights[question_id], correct)
-        self.deck_weights[question_id] = new_weight
         if set(selected) == set(self._current_question_keys): correct = True
+        self.deck_weights[question_id] = self._calc_new_weight(self.deck_weights[question_id], correct)
         if not correct: self.correct_answers_to_quiz.append(self.deck[question_id].get_correct_answers())
         if correct or self.exam: self.deck.pop(question_id)
         return (self.exam, correct, self._current_question_keys) # I don't want to save exam state on client side

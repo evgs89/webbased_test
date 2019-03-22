@@ -9,19 +9,19 @@ class TestQuestion:
         self._pic = None
 
     @property
-    def question(self):
+    def question_text(self):
         return self._question
 
-    @question.setter
-    def question(self, text):
+    @question_text.setter
+    def question_text(self, text):
         self._question = str(text)
 
     @property
-    def number(self):
+    def tag(self):
         return self._number
 
-    @number.setter
-    def number(self, number):
+    @tag.setter
+    def tag(self, number):
         self._number = str(number)
 
     @property
@@ -48,7 +48,7 @@ class TestQuestion:
         if correct: self._available_answers_count += 1
 
     def get_correct_answers(self):
-        correct_answers = namedtuple('correct_answers', 'tag question question_pic correct_answers')
+        correct_answers = namedtuple('correct_answers', 'tag question_text question_pic correct_answers')
         return correct_answers(self._number, self._question, self._pic, [i for i in self._answers if i[0]])
 
     def __repr__(self):
@@ -81,11 +81,11 @@ class SpecialFileImporter:
                     num_starts = line.index('[')
                     num_ends = line.index(']')
                     num_of_question = line[(num_starts + 1):num_ends]
-                    current_question.number = num_of_question
+                    current_question.tag = num_of_question
                     quest_text = line[(num_ends + 1):-1]
                 except ValueError:
                     if line[:2] == 'А)':
-                        current_question.question = quest_text
+                        current_question.question_text = quest_text
                         quest_text = ''
                         current_question.add_answer(line[2:-1], True)
                     elif line[:2] == 'Б)' or line[:2] == 'В)': current_question.add_answer(line[2:-1])

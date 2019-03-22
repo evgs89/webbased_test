@@ -2,23 +2,7 @@ import unittest
 from modules.TestDatabase import TestDatabase, DuplicateTestNameException
 from modules.importer import TestQuestion
 import os
-
-
-def create_test_questions():
-    questions = []
-    for i in range(5):
-        test_tag = i
-        test_text = f"This is test question number {i}"
-        test_answers = [(True, 'Answer 1', None),
-                        (False, 'Answer 2', None),
-                        (False, 'Answer 3', None),
-                        (True, 'Answer 4', None)]
-        q = TestQuestion()
-        q.number = test_tag
-        q.question = test_text
-        q.answers = test_answers
-        questions.append(q)
-    return questions
+from modules.my_functions import create_test_questions
 
 
 class test_TestDatabase(unittest.TestCase):

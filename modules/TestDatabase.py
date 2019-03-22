@@ -42,18 +42,18 @@ class TestDatabase:
             except FileNotFoundError: pass
             conn = sqlite3.connect(filename)
             cursor = conn.cursor()
-            cursor.execute("CREATE TABLE questions (tag TEXT, question TEXT, question_pic BLOB)")
+            cursor.execute("CREATE TABLE questions (tag TEXT, question_text TEXT, question_pic BLOB)")
             conn.commit()
             cursor.execute("CREATE TABLE answers (tag TEXT, correct BOOL, answer TEXT, answer_pic BLOB)")
             conn.commit()
             for question in questions:
                 cursor.execute("INSERT INTO questions values (?, ?, ?)",
-                               (question.number,
-                                question.question,
+                               (question.tag,
+                                question.question_text,
                                 sqlite3.Binary(question.question_picture) if question.question_picture else None))
                 for answer in question.answers:
                     cursor.execute("INSERT INTO answers values (?, ?, ?, ?)",
-                                   (question.number,
+                                   (question.tag,
                                     answer[0],
                                     answer[1],
                                     sqlite3.Binary(answer[2]) if answer[2] else None))
@@ -103,11 +103,11 @@ class TestDatabase:
         if type(question_tags) == int: question_tags = [str(question_tags), ]
         if type(question_tags) == str: question_tags = [question_tags, ]
         for tag in question_tags:
-            cur.execute("SELECT question, question_pic FROM questions WHERE tag = ?", (tag, ))
+            cur.execute("SELECT question_text, question_pic FROM questions WHERE tag = ?", (tag, ))
             row = cur.fetchone()
             question = TestQuestion()
-            question.number = tag
-            question.question = row[0]
+            question.tag = tag
+            question.question_text = row[0]
             question.question_picture = row[1]
             cur.execute("SELECT correct, answer, answer_pic FROM answers WHERE tag = ?", (tag, ))
             answers = cur.fetchall()

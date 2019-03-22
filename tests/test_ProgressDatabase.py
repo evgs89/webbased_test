@@ -1,8 +1,7 @@
 import unittest
 from modules.userManager import UserManager
 from modules.TestDatabase import TestDatabase, ProgressDatabase
-from tests.test_TestDatabase import create_test_questions
-from modules.my_functions import id_generator
+from modules.my_functions import id_generator, create_test_questions
 
 
 class tets_ProgressDatabase(unittest.TestCase):
