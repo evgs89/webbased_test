@@ -27,3 +27,9 @@ def create_test_questions():
         q.answers = test_answers
         questions.append(q)
     return questions
+
+def input_wrapper(func):
+    def wrapper(*args):
+        print('func {name} called with args: {args}'.format(name = str(func), args = str([str(i) for i in args])))
+        func(*args)
+    return wrapper

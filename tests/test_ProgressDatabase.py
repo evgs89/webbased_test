@@ -46,9 +46,9 @@ class tets_ProgressDatabase(unittest.TestCase):
         self.assertIsNotNone(self.pd.select_test(self.um.get_user_id('test_user'), self.td.get_test_id('test_db')[0]))
 
     def test_update_progress(self):
-        ID = self.pd.select_test(self.um.get_user_id('test_user'), self.td.get_test_id('test_db')[0])
-        self.assertTrue(self.pd.update_progress(ID, 50, 70))
-        progress = self.pd.return_progress(self.um.get_user_id('test_user'), self.td.get_test_id('test_db')[0])
+        user_id = self.um.get_user_id('test_user')
+        self.assertTrue(self.pd.update_progress(self.td.get_test_id('test_db')[0], user_id, 50, 70))
+        progress = self.pd.return_progress(user_id, self.td.get_test_id('test_db')[0])
         self.assertIn(50, progress)
         self.assertIn(70, progress)
 

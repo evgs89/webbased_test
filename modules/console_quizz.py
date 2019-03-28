@@ -1,12 +1,10 @@
 import npyscreen
-import random
 from modules.quiz_engine import Engine
-
 
 
 class TestApp(npyscreen.NPSAppManaged):
     def onStart(self):
-        self._engine = Engine()
+        self.engine = Engine()
         self._current_test = ''
         self.numOfQuestions = 0
         self.numOfQuestionsAnswered = 0
@@ -16,8 +14,7 @@ class TestApp(npyscreen.NPSAppManaged):
         self.addForm('SELECT_TEST', SelectTestForm)
         self.addForm('SELECT_MODE', SelectModeForm)
         self.addFormClass('QUESTION', TestForm)
-        self.addForm()
-
+        self.addForm('RESULT', ResultForm)
 
 
 class LoginForm(npyscreen.Form):
@@ -29,7 +26,7 @@ class LoginForm(npyscreen.Form):
         self.add(npyscreen.FixedText(value = 'For exiting app press Ctrl+C'))
 
     def afterEditing(self):
-        userId = self.parentApp._engine.validateUser(self._login, self._password)
+        userId = self.parentApp.engine.validateUser(self._login, self._password)
         if userId: self.parentApp.setNextForm('SELECT_TEST')
         else: self.parentApp.setNextForm('LOGIN_ERROR')
 
@@ -44,20 +41,20 @@ class LoginErrorForm(npyscreen.fmPopup.Popup):
 
 class SelectTestForm(npyscreen.Form):
     def create(self):
-        self._available_tests = self.parentApp._engine.get_available_tests() # [[id, name, description]]
+        self._available_tests = self.parentApp.engine.get_available_tests()  # [[id, name, description]]
         tests = [str(i[0]) + ' - ' + str(i[1]) for i in self._available_tests]
         self.test_selector = self.add(npyscreen.MultiLine(values = tests))
 
     def afterEditing(self):
         if self.test_selector.value:
-            self.parentApp._engine.select_test(self._available_tests[self.test_selector.value][0])
+            self.parentApp.engine.select_test(self._available_tests[self.test_selector.value][0])
             self.parentApp.setNextForm('SELECT_MODE')
 
 
 class SelectModeForm(npyscreen.Form):
     def create(self):
         self.add(npyscreen.FixedText(value = "Ваш прогресс в выбранном тесте:"))
-        self.add(npyscreen.FixedText(value = self.parentApp._engine.get_progress()))
+        self.add(npyscreen.FixedText(value = self.parentApp.engine.get_progress()))
         self.nextrely += 1
         self.add(npyscreen.FixedText(value = "Выберите режим прохождения:"))
         values = ['20 вопросов, обучение',
@@ -72,38 +69,38 @@ class SelectModeForm(npyscreen.Form):
         if self.selectedMode.value == 1 or self.selectedMode.value == 3: num = 50
         if self.selectedMode.value > 1: exam = True
         self.parentApp.numOfQuestions, self.parentApp.numOfQuestionsAnswered = num, 0
-        if self.parentApp._engine.select_mode(num, exam):
+        if self.parentApp.engine.select_mode(num, exam):
             self.parentApp.setNextForm('QUESTION')
 
 
 class TestForm(npyscreen.Form):
     def create(self):
-        question = self.parentApp._engine.get_random_question_from_deck()
+        question = self.parentApp.engine.get_random_question_from_deck()
         self.name = question.tag
-        self.progressbar = self.add(npyscreen.SliderNoLabel(out_of = len(self.parentApp._engine.deck_weights),
+        self.progressbar = self.add(npyscreen.SliderNoLabel(out_of = len(self.parentApp.engine.deck_weights),
                                                    step = 0,
-                                                   value = len(self.parentApp._engine.deck)))
+                                                   value = len(self.parentApp.engine.deck)))
         self.add(npyscreen.Pager(value = question.question_text, autowrap = True))
         self.answer = self.add(npyscreen.MultiLine(values = question.answers))
 
 
     def afterEditing(self):
         "validate user's answer and set next form"
-        exam, correct, correct_keys = self.parentApp._engine.user_answered_question(self.name, self.answer,) ## TODO: check arguments
+        exam, correct, correct_keys = self.parentApp.engine.user_answered_question(self.name, self.answer,)
         if not exam and not correct:
             npyscreen.notify_confirm(f'Ответ неверный. Верные варианты: {", ".join(correct_keys)}')
-        if not len(self.parentApp._engine.deck): self.parentApp.setNextForm('RESULT')
+        if not len(self.parentApp.engine.deck): self.parentApp.setNextForm('RESULT')
 
 
 class ResultForm(npyscreen.Form):
     def create(self):
         self.name = "Result"
-        correct_answers = self.parentApp._engine.test_finished()
+        correct_answers = self.parentApp.engine.test_finished()
         correct_answers_text = ''
         for answer in correct_answers:
             answers = "\n".join([j[1] for j in answer.correct_answers])
             correct_answers_text += f'Вопрос: {answer.tag}\n{answer.question_text}\nВерный ответ:\n{answers}\n'
-        if self.parentApp._engine.exam:
+        if self.parentApp.engine.exam:
             text = f'Тест окончен. Ознакомьтесь с вопросами, на которые Вы ответили неверно:\n{correct_answers_text}'
         else:
             text = 'Тест окончен.'

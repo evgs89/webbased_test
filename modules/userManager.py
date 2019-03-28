@@ -67,10 +67,11 @@ class UserManager:
             cur.execute("DELETE FROM users WHERE username = ?", (name, ))
             conn.commit()
             ProgressDatabase(self).delete_user(user_id)
+            return cur.rowcount > 0
         else:
             print('No such user')
             return True
-        return cur.rowcount > 0
+
 
     def get_list_of_users(self):
         conn, cur = self._connect_db()
