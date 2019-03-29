@@ -68,31 +68,35 @@ class SpecialFileImporter:
         counter = 1
         questions = []
         current_question = TestQuestion()
-        quest_text = ''
+        current_text = ''
         with open(filename) as file:
             for line in file:
                 try:
-                    start_of_question = line.index('{count}.'.format(count = str(counter)))
-                    if line[:2] == 'Г)':
-                        current_question.add_answer(line[2:start_of_question])
-                        questions.append(current_question)
+                    line.index('{count}.'.format(count = str(counter)))
+                    current_question.add_answer(current_text, False)
+                    questions.append(current_question)
                     current_question = TestQuestion()
+                    current_text = ''
                     counter += 1
                     num_starts = line.index('[')
                     num_ends = line.index(']')
                     num_of_question = line[(num_starts + 1):num_ends]
                     current_question.tag = num_of_question
-                    quest_text = line[(num_ends + 1):-1]
+                    current_text = line[(num_ends + 1):-1]
                 except ValueError:
                     if line[:2] == 'А)':
-                        current_question.question_text = quest_text
-                        quest_text = ''
-                        current_question.add_answer(line[2:-1], True)
-                    elif line[:2] == 'Б)' or line[:2] == 'В)': current_question.add_answer(line[2:-1])
-                    elif line[:2] == 'Г)':
-                        current_question.add_answer(line[2:-1])
-                        questions.append(current_question)
-                    else: quest_text = quest_text + ' ' + line[:-1]
+                        current_question.question_text = current_text
+                        current_text = line[2:-1]
+                        # current_question.add_answer(line[2:-1], True)
+                    elif line[:2] == 'Б)':
+                        current_question.add_answer(current_text, True)
+                        current_text = line[2:-1]
+                    elif line[:2] == 'В)' or line[:2] == 'Г)':
+                        current_question.add_answer(current_text, False)
+                        current_text = line[2:-1]
+                    else: current_text = current_text + ' ' + line[:-1]
+            if current_text: current_question.add_answer(current_text, False)
+            questions.append(current_question)
         return questions
 
 

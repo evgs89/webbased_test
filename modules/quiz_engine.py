@@ -82,7 +82,7 @@ class Engine:
         weight_list = self._progress_db.get_weights(self._user_id, self._quiz_id)
         # "SELECT question_id, weight, last_seen FROM progress"
         ids = [i[0] for i in weight_list]
-        if quantity < len(ids): quantity = len(ids)
+        if quantity > len(ids): quantity = len(ids)
         weights = [float(i[1]) for i in weight_list]
         q = sum(weights)
         weights = [i/q for i in weights] ## костыль из-за перехода на numpy

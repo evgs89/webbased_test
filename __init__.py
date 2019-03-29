@@ -1,14 +1,16 @@
-from modules.importer import TestQuestion
+from modules.console_quizz import TestApp
+from modules.importer import SpecialFileImporter
 from modules.TestDatabase import TestDatabase
-from modules.exporter import simpleExporter
-import sys
-import pickle
-
 
 if __name__ == "__main__":
-    fe = simpleExporter()
-    with open('binary_output', 'rb') as _input:
-        questions = pickle.load(_input)
-        print(("Loaded {0} questions").format(len(questions)))
-        db = TestDatabase('medical_quizz.db')
-        db.save_to_db(questions, replace = True)
+    # fi = SpecialFileImporter()
+    # questions = fi.open_file("med_test_orig.txt")
+    # td = TestDatabase()
+    # td.save_to_db_file('medtest.db', questions, replace = True)
+    #
+    # td = TestDatabase()
+    # description = 'аккредитация 1 этап 34.02.01 СЕСТРИНСКОЕ ДЕЛО'
+    # td.load_to_db(td.load_from_db_file('medtest.db').values(), 'Гинекология', description)
+
+    main_test = TestApp()
+    main_test.run()
