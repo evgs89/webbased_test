@@ -1,2 +1,8 @@
 {% extends 'quiz/base.html' %}
 {% load staticfiles %}
+{% block body %}
+<h1 class="h5">Please select test</h1>
+{% for quiz in quizzes %}
+<a href="/quiz/{{ quiz.url_name }}"><b>{{ quiz.name }}</b> - {{ quiz.description }}</a>
+{% endfor %}
+{% endblock %}

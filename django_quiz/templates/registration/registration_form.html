@@ -1,25 +1,48 @@
 {% extends "quiz/base.html" %}
 {% block body %}
-    <link href="http://getbootstrap.com/examples/signin/signin.css" rel="stylesheet">
-    <h1></h1>
-    <form method="post" action=".">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="Submit" />
-    </form>
-
+<link href="http://getbootstrap.com/examples/signin/signin.css" rel="stylesheet">
 <div class="jumbotron">
     <h1 class="display-4">Register Here</h1>
 </div>
 <form class="form-signin" role="form" method="post" action=".">
     {% csrf_token %}
     <h2 class="form-signin-heading">Please fill this form</h2>
+    {% if form.errors %}
+    <ul>
+        {% for error in form.errors %}
+        <li>{{ error | escape }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if form.non_field_errors %}
+    <b>Errors: </b>
+    <ul>
+        {% for error in form.non_field_errors %}
+        <li>{{ error | escape }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <p class="required">
     <label for="inputUsername" class="sr-only">Username</label>
     <input type="text" name="username" id="id_username" class="form-control"
     placeholder="Username" required autofocus>
-    <label for="inputPassword" class="sr-only">Password</label>
-    <input type="password" name="password" id="id_password" class="form-control"
+    </p>
+    <p class="required">
+    <label for="inputEmail" class="sr-only">E-Mail</label>
+    <input type="email" name="email" id="id_email" class="form-control"
+    placeholder="E-Mail" required>
+    </p>
+    <p class="required">
+    <label for="inputPassword1" class="sr-only">Password</label>
+    <input type="password" name="password1" id="id_password1" class="form-control"
     placeholder="Password" required>
-    <button class="btn btn-lg btn-primary btn-block" type="submit" value="Submit" />Sign in</button>
+    </p>
+    <p class="required">
+    <label for="inputPassword2" class="sr-only">Retype Password</label>
+    <input type="password" name="password2" id="id_password2" class="form-control"
+    placeholder="Retype Password" required>
+    </p>
+    <button class="btn btn-lg btn-primary btn-block" type="submit" value="Submit">Sign Up</button>
+    <input type="hidden" name="next" value="{{ next }}" />
 </form>
 {% endblock %}

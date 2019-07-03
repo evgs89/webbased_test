@@ -1,0 +1,15 @@
+{% extends 'quiz/base.html' %}
+{% load staticfiles %}
+{% block body %}
+<h1 class="h5">Hello, {{ user }}!</h1>
+<div>
+    You selected test: {{ quiz.name }}<br/>
+    Your last use of this test was: {{ progress.last_use }}<br/>
+    You have seen {{ progress.seen_percent }}% of all questions in this quiz<br/>
+    You have learned {{ progress.learned_percent }}% of this quiz.<br/>
+</div>
+<div>
+    <a href="/quiz/{{ quiz.url_name }}/learn">Try or learn</a><br/>
+    <a href="/quiz/{{ quiz.url_name }}/exam?num=50">Examine yourself!</a>
+</div>
+{% endblock %}

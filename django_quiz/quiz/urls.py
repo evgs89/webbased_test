@@ -6,4 +6,5 @@ app_name = 'quiz'
 urlpatterns = [
     path('', views.index, name = 'index'),
     path('select', views.select, name = 'select'),
+    path('<quiz_name_slug>', views.statistics)
 ]

@@ -28,6 +28,7 @@ class MyRegistrationView(RegistrationView):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/register', MyRegistrationView.as_view(), name = 'registration_register'),
     path('accounts/', include('registration.backends.simple.urls')),
     path('quiz/', include('quiz.urls')),
     path('', views.index, name = 'index')
