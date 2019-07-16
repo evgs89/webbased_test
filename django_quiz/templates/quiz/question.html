@@ -1,0 +1,32 @@
+{% extends 'quiz/base.html' %}
+{% load staticfiles %}
+{% block body %}
+<h1 class="h5">Question: {{ question.question_tag }}</h1>
+<div>
+    {{ question.question_text }}
+    {% if question.question_pic %}
+    <div>
+        <img src="static/{{ question_pic }}">
+    </div>
+    {% endif %}
+</div>
+<div>
+    <form id="answer_form" method="post" action="/quiz/{{ quiz_name_slug }}/exam">
+        {% csrf_token %}
+        <div>
+            <ul>
+                {% for answer_id, answer_text in form.answers.field.choices %}
+                    <li>
+                        <input type="checkbox" name="answers" value="{{ answer_id }}">{{ answer_text }}
+                        {{ pics.answer_id }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <input type="submit" name="submit" value="Submit">
+    </form>
+</div>
+<div>
+    <progress value="{{ answered }}" max="{{ deck_length }}"></progress>
+</div>
+{% endblock %}

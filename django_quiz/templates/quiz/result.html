@@ -1,0 +1,38 @@
+{% extends 'quiz/base.html' %}
+{% load staticfiles %}
+{% block body %}
+<h1 class="h5">Question: {{ question.question_tag }}</h1>
+<div>
+    {{ question.question_text }} <br>
+    {% if question.question_pic %}
+        <img src="/static/{{ question.question_pic }}">
+    {% endif %}
+</div>
+<div id="'right_answers">
+    <h3 class="h3">Right answers:</h3>
+    <div>
+        <ul>
+            {% for answer in right_answers %}
+            <li>{{ answer.answer_text }}
+                {% if answer.answer_pic %}
+                    <img src="/static/{{ answer.answer_pic }}" />
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+<div id="'user_answers">
+    <h3 class="h3">You answered:</h3>
+    <ul>
+            {% for answer in user_answers %}
+            <li>{{ answer.answer_text }}
+                {% if answer.answer_pic %}
+                    <img src="/static/{{ answer.answer_pic }}" />
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+</div>
+<a href="/quiz/{{ quiz_name_slug }}/exam">OK</a>
+{% endblock %}
