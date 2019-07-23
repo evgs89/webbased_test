@@ -1,9 +1,14 @@
+import os, shutil
+
+from random import shuffle
+
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from quiz.models import Quizzes, Questions, Progress, Answers
-from quiz.forms import QuestionForm
+from quiz.forms import QuestionForm, UploadTestForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from quiz.utils import import_quiz
 
 
 # Create your views here.
@@ -34,10 +39,10 @@ def start_test(request, quiz_name_slug):
     current_quiz = Quizzes.objects.get(url_name = quiz_name_slug)
     request.session['exam'] = is_exam
     request.session['current_test'] = current_quiz.id
-    request.session['deck_length'] = num_of_questions
     request.session['answered'] = 0
     request.session['user_answers'] = {}  # {question_id: [answers_id]}
     request.session['current_deck'] = current_quiz.get_deck(num_of_questions, request.user)
+    request.session['deck_length'] = len(request.session['current_deck'])
     return redirect(f'/quiz/{quiz_name_slug}/exam')
 
 
@@ -49,14 +54,13 @@ def exam(request, quiz_name_slug):
             request.session['current_question'] = question_id
             question = Questions.objects.get(id = question_id)
             form = QuestionForm(question = question)
-            answers = question.get_answers()
-            pics = {a.id: f"<img src='/static/{a.answer_pic}'>" if a.answer_pic else "" for a in answers}
-            context_dict = {'question': question, 'form': form, 'answers': answers, 'pics': pics,
+            pics = {answer.id: answer.answer_pic for answer in question.get_answers()}
+            context_dict = {'question': question, 'form': form, 'pics': pics,
                             'quiz_name_slug': quiz_name_slug,
                             'answered': request.session.get('answered', 0),
                             'deck_length': request.session.get('deck_length', 0)}
             return render(request, 'quiz/question.html', context_dict)
-        except IndexError: # questions in deck are finished
+        except IndexError:  # questions in deck are finished
             print('deck is empty')
             return redirect(f'/quiz/{quiz_name_slug}/result')
     elif request.method == 'POST':
@@ -78,15 +82,20 @@ def exam(request, quiz_name_slug):
                 return redirect(f'/quiz/{quiz_name_slug}/exam')
             else:
                 deck.append(question_id)
+                shuffle(deck)
                 request.session['current_deck'] = deck
                 return redirect(f'/quiz/{quiz_name_slug}/result')
+        else:
+            deck.append(question_id)
+            shuffle(deck)
+            request.session['current_deck'] = deck
+            return redirect(f'/quiz/{quiz_name_slug}/exam')
 
 @login_required
 def result(request, quiz_name_slug):
     try:
         question_id, answer_ids = request.session['user_answers'].popitem()
         request.session.save()
-        # request.session['user_answers'].pop(question_id)
         question = Questions.objects.get(id = question_id)
         user_answers = [Answers.objects.get(id = answer_id) for answer_id in answer_ids]
         right_answers = question.get_right_answer()
@@ -99,6 +108,19 @@ def result(request, quiz_name_slug):
         progress.update_percentage()
         return redirect(f"/quiz/{quiz_name_slug}")
 
+@login_required
+def upload(request):
+    if request.method == "GET":
+        form = UploadTestForm()
+        context_dict = {'form': form}
+        return render(request, "quiz/upload.html", context_dict)
+    elif request.method == "POST":
+        form = UploadTestForm(request.POST, request.FILES)
+        if form.is_valid():
+            if 'file' in request.FILES:
+                result = import_quiz(request.FILES['file'])
+                print(result)
+        return redirect('/quiz/select')
 
 
 

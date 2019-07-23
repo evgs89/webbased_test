@@ -1,0 +1,38 @@
+{% extends 'quiz/base.html' %}
+{% load staticfiles %}
+{% block body %}
+<h1 class="h5">Uploading your test</h1>
+File format for uploading:<br>
+You need to prepare zip-archive with this data (no folders):<br>
+<div>
+    <b>test.txt</b><br>
+    FIle containing questions and answers, marked with special tags. Each tag must be in beginning of the line. <br>
+    <ul>
+        <li><b>&lt%%ID&gt</b> - Number or tag of question</li>
+        <li><b>&lt%%Q&gt</b> - Text of your question</li>
+        <li><b>&lt%%QP&gt</b> - Filename of picture embedded to your question. This file must be in archive too. Optional</li>
+        <li><b>&lt%%AC&gt</b> - Text of correct answer for your question</li>
+        <li><b>&lt%%A&gt</b> - Text of incorrect answer for your question</li>
+        <li><b>&lt%%AP&gt</b> - Filename of picture for current answer. Optional</li>
+    </ul>
+</div>
+<div>
+    <b>description.txt</b><br>
+    File with description and name of the test. Must contain three lines.
+    <ul>
+        <li>url name, latin, must not contain spaces</li>
+        <li>quiz name to show in list</li>
+        <li>description of the quiz</li>
+    </ul>
+</div>
+<div>
+    If you need pictures in your quiz place picture files in archive too, without folders
+</div>
+<div>
+    <form id="upload" method="post" action="/quiz/upload" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}<br>
+        <input type="submit" name="submit" value="Upload">
+    </form>
+</div>
+{% endblock %}

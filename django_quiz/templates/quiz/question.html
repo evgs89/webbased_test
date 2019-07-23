@@ -1,29 +1,50 @@
 {% extends 'quiz/base.html' %}
 {% load staticfiles %}
+{% load django_utils %}
 {% block body %}
-<h1 class="h5">Question: {{ question.question_tag }}</h1>
-<div>
-    {{ question.question_text }}
-    {% if question.question_pic %}
+<div class="card mb-5">
+        <div class="row no-gutters">
+            {% if question.question_pic %}
+                <div class="col-md-4">
+            {% else %}
+                <div class="col-md-12">
+            {% endif %}
+                <div class="card">
+                    <div class="card-header">Question: {{ question.question_tag }}</div>
+                    <div class="card-body">
+                        <div class="card-text">
+                            {{ question.question_text }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% if question.question_pic %}
+            <div class="col-md-8"><img class="img-fluid" src="{{ question.question_pic.url }}" /></div>
+        {% endif %}
+        </div>
     <div>
-        <img src="static/{{ question_pic }}">
-    </div>
-    {% endif %}
 </div>
-<div>
+</div>
+<div class="container">
     <form id="answer_form" method="post" action="/quiz/{{ quiz_name_slug }}/exam">
         {% csrf_token %}
-        <div>
-            <ul>
+        <div class="card-deck mb-5">
                 {% for answer_id, answer_text in form.answers.field.choices %}
-                    <li>
-                        <input type="checkbox" name="answers" value="{{ answer_id }}">{{ answer_text }}
-                        {{ pics.answer_id }}
-                    </li>
+                    <div class="card border-light">
+                        {% if pics|get_value_from_dict:answer_id %}
+                            {% with pic=pics|get_value_from_dict:answer_id %}
+                            <img src="{{ pic.url }}" class="card-img-top img-fluid" />
+                            {% endwith %}
+                        {% endif %}
+                        <div class="btn-group-toggle" data-toggle="buttons">
+                            <label class="btn btn-primary btn-block">
+                                <input type="checkbox" autocomplete="off" name="answers" value="{{ answer_id }}">{{ answer_text }}
+                            </label>
+                        </div>
+                    </div>
                 {% endfor %}
-            </ul>
         </div>
-        <input type="submit" name="submit" value="Submit">
+        <input type="submit" name="submit" value="Submit" class="btn btn-primary btn-active mb-5">
     </form>
 </div>
 <div>

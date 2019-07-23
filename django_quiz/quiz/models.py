@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from django.db import models
@@ -11,8 +12,8 @@ class Quizzes(models.Model):
     name = models.TextField(unique = True, max_length = 250)
     url_name = models.SlugField(unique = True)
     description = models.TextField()
-    max_weight = models.FloatField()
-    initial_weight = models.FloatField()
+    max_weight = models.FloatField(null = True)
+    initial_weight = models.FloatField(null = True)
 
     def get_deck(self, num_of_questions: int, user):
         """
@@ -29,16 +30,23 @@ class Quizzes(models.Model):
                                                                defaults = {'weight': self.initial_weight})[0])
         total_weight = sum([i.weight for i in progress])
         weights = [i.weight/total_weight for i in progress]
-        deck_progress = choice(a = progress, size = num_of_questions, replace = False, p = weights)
+        try:
+            deck_progress = choice(a = progress, size = num_of_questions, replace = False, p = weights)
+        except ValueError:
+            deck_progress = choice(a = progress, size = len(questions), replace = False, p = weights)
         deck = [i.question_id.id for i in deck_progress]
         return deck
+
+    def calc_weight(self):
+        self.max_weight = len(Questions.objects.filter(quiz_id = self.id))
+        self.initial_weight = self.max_weight / 2
 
 
 class Questions(models.Model):
     quiz_id = models.ForeignKey(Quizzes, on_delete = models.CASCADE)
     question_tag = models.TextField()
     question_text = models.TextField()
-    question_pic = models.TextField(default = '')
+    question_pic = models.ImageField(blank = True)
 
     def get_answers(self):
         return Answers.objects.filter(question_id = self.id)
@@ -67,8 +75,8 @@ class Questions(models.Model):
 class Answers(models.Model):
     question_id = models.ForeignKey(Questions, on_delete = models.CASCADE)
     answer_text = models.TextField()
-    answer_pic = models.TextField(default = '')
-    answer_correct = models.BooleanField()
+    answer_pic = models.ImageField(blank = True)
+    answer_correct = models.BooleanField(default = False)
 
 
 class Progress(models.Model):

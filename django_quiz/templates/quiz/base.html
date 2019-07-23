@@ -25,6 +25,9 @@
             <li class="nav-item">
               <a class="nav-link" href="{% url 'quiz:select' %}">Select quiz</a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'quiz:upload' %}">Upload your quiz</a>
+            </li>
             {% else %}
               <li class="nav-item">
                 <a class="nav-link disabled" href="{% url 'quiz:index' %}">Select quiz</a>

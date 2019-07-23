@@ -7,7 +7,13 @@ class QuestionForm(forms.Form):
         super().__init__(*args, **kwargs)
         answers = self.question.get_answers()
         self.choices = [(a.id, a.answer_text) for a in answers]
-        self.fields['answers'] = forms.MultipleChoiceField(choices = self.choices, widget = forms.CheckboxSelectMultiple)
+        self.fields['answers'] = forms.MultipleChoiceField(choices = self.choices,
+                                                           widget = forms.CheckboxSelectMultiple)
+
+
+class UploadTestForm(forms.Form):
+    file = forms.FileField(label = "Select a file", required = True)
+
 
 
 

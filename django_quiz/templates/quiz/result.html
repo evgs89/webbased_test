@@ -1,38 +1,56 @@
 {% extends 'quiz/base.html' %}
 {% load staticfiles %}
 {% block body %}
-<h1 class="h5">Question: {{ question.question_tag }}</h1>
-<div>
-    {{ question.question_text }} <br>
-    {% if question.question_pic %}
-        <img src="/static/{{ question.question_pic }}">
-    {% endif %}
-</div>
-<div id="'right_answers">
-    <h3 class="h3">Right answers:</h3>
-    <div>
-        <ul>
-            {% for answer in right_answers %}
-            <li>{{ answer.answer_text }}
-                {% if answer.answer_pic %}
-                    <img src="/static/{{ answer.answer_pic }}" />
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
+<div class="card mb-5">
+    <div class="row no-gutters">
+        {% if question.question_pic %}
+            <div class="col-md-4">
+        {% else %}
+            <div class="col-md-12">
+        {% endif %}
+                <div class="card">
+                    <div class="card-header">Question: {{ question.question_tag }}</div>
+                    <div class="card-body">
+                        <div class="card-text">
+                            {{ question.question_text }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% if question.question_pic %}
+            <div class="col-md-8"><img class="img-fluid" src="{{ question.question_pic.url }}" /></div>
+        {% endif %}
     </div>
 </div>
-<div id="'user_answers">
-    <h3 class="h3">You answered:</h3>
-    <ul>
-            {% for answer in user_answers %}
-            <li>{{ answer.answer_text }}
-                {% if answer.answer_pic %}
-                    <img src="/static/{{ answer.answer_pic }}" />
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
+<div class="card-deck mb-5">
+    <div class="card border-success" id="right_answers">
+        <div class="card-header bg-transparent">Right answers:</div>
+        <div class="card-body">
+            <ul>
+                {% for answer in right_answers %}
+                <li>{{ answer.answer_text }}
+                    {% if answer.answer_pic %}
+                        <img class="img-fluid" src="{{ answer.answer_pic.url }}" />
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="card border-danger" id="user_answers">
+        <div class="card-header">You answered:</div>
+        <div class="card-body">
+            <ul>
+                {% for answer in user_answers %}
+                <li>{{ answer.answer_text }}
+                    {% if answer.answer_pic %}
+                        <img class="img-fluid" src="{{ answer.answer_pic.url }}" />
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>
-<a href="/quiz/{{ quiz_name_slug }}/exam">OK</a>
+<a class="btn btn-primary" role="button" href="/quiz/{{ quiz_name_slug }}/exam">OK</a>
 {% endblock %}

@@ -1,0 +1,33 @@
+<%%ID>TQ001
+<%%Q>Choose var1
+<%%AC>Variant 1
+<%%A>Variant2
+<%%A>Variant3
+<%%A>Variant4
+<%%ID>TQ002
+<%%Q>Choose 
+var1
+<%%AC>Variant 1
+<%%A>Variant2
+<%%A>Variant3
+<%%A>Variant4
+<%%ID>TQ003
+<%%Q>Choose var1
+<%%AC>Variant 1
+<%%A>Variant2
+<%%A>Variant3
+<%%A>Variant4
+<%%ID>TQ004
+<%%Q>Choose rango
+<%%AC>Variant 1
+<%%AP>rango.jpeg
+<%%A>Variant2
+<%%A>Variant3
+<%%A>Variant4
+<%%ID>TQ005
+<%%Q>Choose var1
+<%%QP>05.jpg
+<%%AC>Variant 1
+<%%A>Variant2
+<%%A>Variant3
+<%%A>Variant4
